@@ -14,8 +14,7 @@ OCTAVE_ONE = {'A': 1123, 'B': 1000, 'C': 943, 'G': 1240}
 """
 SerialInterface for issuing commands to the arduino
 Supported commands:
-  - CMD_READ: Read a byte from a ring buffer on the arduino
-  - CMD_WRITE: Write a byte to a ring buffer on the arduino
+  - CMD_PLAY: Play a note on the specified stepper motor
 """
 class SerialInterface(object):
     CMD_PLAY = "p"
@@ -26,6 +25,9 @@ class SerialInterface(object):
         # Wait for arduino to boot up
         time.sleep(2)
 
+    # motor - motor index to play note on
+    # note_delay - step delay of note to play
+    # duration - duration in steps to play note for
     # Returns tuple (bool success, str response from arduino)
     def play(self, motor, note_delay, duration):
         # Send a read command for the requested ringbuf
@@ -59,7 +61,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-    
-    
