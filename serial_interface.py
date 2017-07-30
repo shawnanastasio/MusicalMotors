@@ -9,7 +9,7 @@ import sys
 ARDUINO_PORT = "/dev/cu.usbmodem1441" # Path to serial port
 BAUD = 9600
 
-OCTAVE_ONE = {'A': 1123, 'B': 1000, 'C': 943, 'G': 1240}
+OCTAVE_ONE = {'A': 1123, 'B': 1000, 'C': 943, 'G': 1260}
 
 """
 SerialInterface for issuing commands to the arduino
@@ -27,11 +27,11 @@ class SerialInterface(object):
 
     # motor - motor index to play note on
     # note_delay - step delay of note to play
-    # duration - duration in steps to play note for
+    # duration - duration in ms to play note for
     # Returns tuple (bool success, str response from arduino)
     def play(self, motor, note_delay, duration):
         # Send a read command for the requested ringbuf
-        self.s.write("%s %d %d %d \n" % (self.CMD_PLAY, motor, note_delay, duration))
+        self.s.write("%s %d %d %d \n" % (self.CMD_PLAY, motor, note_delay, 500*duration/note_delay))
 
         # Recieve the full response
         resp = self.s.readline()
@@ -50,9 +50,9 @@ def main():
 
     #si.play(0, OCTAVE_ONE['B'], 1000)
     #time.sleep(1)
-    #si.play(0, OCTAVE_ONE['A'], 1000)
+    si.play(1, OCTAVE_ONE['B'], 1000)
     #time.sleep(1.2)
-    si.play(0, OCTAVE_ONE['G'], 10000)
+    si.play(0, OCTAVE_ONE['A'], 1000)
     #delay
     #si.play(0, OCTAVE_ONE['B'], 1000)
     #si.play(0, OCTAVE_ONE['A'], 1000)
