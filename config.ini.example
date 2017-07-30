@@ -1,0 +1,10 @@
+; Configuration for Arduino connection
+[Arduino]
+; Place your serial port here
+; /dev/cu.* on macOS
+; /dev/tty* on Linux
+; COM*      on Windows
+SerialPort:my_arduino_serial_port
+
+; Place your Arduino's configured baudrate here, probably 9600
+Baudrate:9600

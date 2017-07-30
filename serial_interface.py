@@ -5,9 +5,12 @@ import serial
 import time
 import random
 import sys
+import configparser
 
-ARDUINO_PORT = "/dev/cu.usbmodem1441" # Path to serial port
-BAUD = 9600
+CONFIG_PATH = "config.ini" # Path to configuration file
+
+ARDUINO_PORT = None # Path to serial port
+BAUD = None         # Baudrate of serial port
 
 OCTAVE_ONE = {'A': 1123, 'B': 1000, 'C': 943, 'G': 1260}
 
@@ -30,7 +33,7 @@ class SerialInterface(object):
     # duration - duration in ms to play note for
     # Returns tuple (bool success, str response from arduino)
     def play(self, motor, note_delay, duration):
-        # Send a read command for the requested ringbuf
+        # Send a play command to the requested motor
         self.s.write("%s %d %d %d \n" % (self.CMD_PLAY, motor, note_delay, 500*duration/note_delay))
 
         # Recieve the full response
@@ -38,7 +41,6 @@ class SerialInterface(object):
         #while not "ERR" in resp and not "OK" in resp:
         #    resp += self.s.readline()
 
-        print resp
         if not "ERR" in resp:
             return (True, resp.rstrip())
         else:
@@ -46,6 +48,13 @@ class SerialInterface(object):
 
 
 def main():
+    global ARDUINO_PORT, BAUD
+    # Read in ARDUINO_PORT and BAUD from config.ini file
+    config = configparser.ConfigParser()
+    config.read(CONFIG_PATH)
+    ARDUINO_PORT = config.get("Arduino", "SerialPort")
+    BAUD = config.get("Arduino", "Baudrate")
+
     si = SerialInterface(ARDUINO_PORT, BAUD)
 
     #si.play(0, OCTAVE_ONE['B'], 1000)
