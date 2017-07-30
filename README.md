@@ -6,6 +6,7 @@ Requirements
 ------------
 * Python 3
 * `configparser`, `pyserial` from `pip`
+* TimerOne library
 
 Usage
 -----
