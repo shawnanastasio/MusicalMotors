@@ -12,7 +12,9 @@ CONFIG_PATH = "config.ini" # Path to configuration file
 ARDUINO_PORT = None # Path to serial port
 BAUD = None         # Baudrate of serial port
 
-OCTAVE_ONE = {'A': 1123, 'B': 1000, 'C': 943, 'G': 1260}
+OCTAVE_ONE = {'G': 1260, 'A': 1123, 'B': 1000, 'C': 943, 'D': 840, 'E': 747, 'F': 705}
+OCTAVE_ONESHARP = {'G': 1190, 'A': 1060, 'B': 943, 'C': 890, 'D': 793, 'E': 705, 'F': 665}
+OCTAVE_TWO = {'G': 629}
 
 """
 SerialInterface for issuing commands to the arduino
