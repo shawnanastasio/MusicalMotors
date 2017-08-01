@@ -45,7 +45,7 @@ class MusicalMotor:
         note = midi % 12
         # List of other octaves that have this note
         other_octaves = []
-        for i in range(0, 10, 1):
+        for i in range(0, 11, 1):
             if self.midi_to_delay[i][note] is not None:
                 other_octaves.append(i)
 
