@@ -125,4 +125,4 @@ class StepperMotor(MusicalMotor):
         self.midi_to_delay = StepperMotor.STEPPER_MIDI_TO_DELAY
 
     def _send_play_cmd(self, delay, duration):
-        self.si.play(motor, note_delay, duration)
+        self.si.play(self.index, delay, duration)
