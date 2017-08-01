@@ -24,8 +24,8 @@ def main():
 
     # Initalize motors
     motors = []
-    motors.append(mm.StepperMotor(None, 0, transpose=True))
-    motors.append(mm.StepperMotor(None, 0, transpose=True))
+    motors.append(mm.StepperMotor(si, 0, transpose=True))
+    motors.append(mm.StepperMotor(si, 0, transpose=True))
 
     # Play each event in the midi
     for msg in mid.play():
