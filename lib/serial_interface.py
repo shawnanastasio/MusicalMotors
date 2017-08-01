@@ -25,7 +25,6 @@ class SerialInterface(object):
     # motor - motor index to play note on
     # note_delay - step delay of note to play
     # duration - duration in ms to play note for
-    # Returns tuple (bool success, str response from arduino)
     def play(self, motor, note_delay, duration):
         # Send a play command to the requested motor
         self.s.write(bytes("%s %d %d %d \n" % (self.CMD_PLAY, motor, note_delay, 500*duration/note_delay), "UTF-8"))
@@ -35,7 +34,5 @@ class SerialInterface(object):
         #while not "ERR" in resp and not "OK" in resp:
         #    resp += self.s.readline()
 
-        if not bytes("ERR", "UTF-8") in resp:
-            return (True, resp.rstrip())
-        else:
-            return (False, resp.rstrip())
+        if bytes("ERR", "UTF-8") in resp:
+            raise RuntimeError("Arduino responded with an error! %s" % (resp.decode("UTF-8")))
