@@ -122,8 +122,7 @@ class StepperMotor(MusicalMotor):
 
     def __init__(self, serial_interface, index, transpose=False):
         MusicalMotor.__init__(self, serial_interface, index, transpose=transpose)
-        print(self.transpose, "KEK")
         self.midi_to_delay = StepperMotor.STEPPER_MIDI_TO_DELAY
 
     def _send_play_cmd(self, delay, duration):
-        self.s.play(motor, note_delay, duration)
+        self.si.play(motor, note_delay, duration)
