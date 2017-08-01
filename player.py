@@ -3,7 +3,6 @@
 import signal
 import sys
 import mido
-import lib.note_database as nd
 import lib.musicalmotor as mm
 from lib.serial_interface import SerialInterface
 from lib.config import Config
