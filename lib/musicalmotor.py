@@ -34,6 +34,7 @@ class MusicalMotor:
         self.index = index
         self.transpose = transpose
         self.midi_to_delay = MusicalMotor.DEFAULT_MIDI_TO_DELAY
+        self.current_note = 0
 
     def get_delay(self, midi):
         octave = midi // 12
@@ -61,7 +62,7 @@ class MusicalMotor:
         # Return the note from the found octave
         return self.midi_to_delay[closest][note]
 
-    def _send_play_cmd(self, delay, duration):
+    def _send_play_cmd(self, delay):
         """
         Sends a command over the Motor's SerialInterface to play a note with the
         specified delay for the specified duration in ms. Must be implemented by subclass.
@@ -71,26 +72,63 @@ class MusicalMotor:
         """
         raise NotImplementedError()
 
-    def play(self, midi, duration):
+    def _send_stop_cmd(self):
+        """
+        Sends a command over the Motor's SerialInterface to stop the current note
+        """
+        raise NotImplementedError()
+
+    def can_play(self, midi_event):
+        if midi_event.type != "note_on" and midi_event.type != "note_off":
+            return False
+
+        if self.current_note != 0 and midi_event.type != "note_off":
+            if midi_event.note == self.current_note and midi_event.velocity == 0:
+                return True
+            return False
+
+        return True
+
+    def play(self, midi_event):
         """
         Play the specified MIDI note for the specified duration on this motor.
         Raises ValueError if the requested note does not have a corresponding delay.
 
         midi - MIDI note index number
-        duration - duration in ms to play note for
         """
 
+        if midi_event.type != "note_on" and midi_event.type != "note_off":
+            print("UNSUPPORTED MIDI EVENT!")
+            return
+
+        # Handle note_off
+        if midi_event.type == "note_off":
+            self._send_stop_cmd()
+            self.current_note = 0
+            return
+
+        # If we're already playing a note, raise an exception
+        if self.current_note != 0:
+            # See if this event is a velocity=0 event (off) for the current note
+            if midi_event.note == self.current_note and midi_event.velocity == 0:
+                # Send a stop command
+                self._send_stop_cmd()
+                self.current_note = 0
+                return
+            raise RuntimeError("Already playing note!")
+
         # Get the delay for the given MIDI note
-        delay = self.get_delay(midi)
+        delay = self.get_delay(midi_event.note)
 
         # If delay is None and self.transpose is True, find the closest note and use that'
         if delay is None and self.transpose == True:
-            delay = self.get_closest_note(midi)
+            delay = self.get_closest_note(midi_event.note)
 
         if delay is None:
             raise ValueError("Requested note has no corresponding delay!")
-
-        self._send_play_cmd(delay, duration)
+    
+        self.current_note = midi_event.note
+        self._send_play_cmd(delay)
 
 class StepperMotor(MusicalMotor):
     O1 = {'G#': 1190, 'G': 1260, 'A#': 1060, 'A': 1123, 'B#': 943, 'B': 1000, 'C#': 890, 'C': 943, 'D#': 793, 'D': 840, 'E#': 705, 'E': 747, 'F#': 665, 'F':705}
@@ -124,5 +162,8 @@ class StepperMotor(MusicalMotor):
         MusicalMotor.__init__(self, serial_interface, index, transpose=transpose)
         self.midi_to_delay = StepperMotor.STEPPER_MIDI_TO_DELAY
 
-    def _send_play_cmd(self, delay, duration):
-        self.si.play(self.index, delay, duration)
+    def _send_play_cmd(self, delay):
+        self.si.play(self.index, delay)
+
+    def _send_stop_cmd(self):
+        self.si.stop(self.index)
