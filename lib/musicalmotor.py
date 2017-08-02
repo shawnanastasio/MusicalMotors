@@ -198,7 +198,7 @@ class FloppyDrive(MusicalMotor):
 
     def __init__(self, serial_interface, index, transpose=False):
         MusicalMotor.__init__(self, serial_interface, index, transpose=transpose)
-        self.midi_to_delay = FLOPPY_MIDI_TO_DELAY
+        self.midi_to_delay = FloppyDrive.FLOPPY_MIDI_TO_DELAY
         
         # Send a reset command to this motor
         self._send_reset_cmd()

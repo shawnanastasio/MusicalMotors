@@ -4,8 +4,8 @@
 #include <TimerOne.h>
 
 /* PROGRAM CONSTANTS */
-#define RESOLUTION 20  // Note resolution in microseconds. tick() is called at this interval
-#define MAX_MOTORS 10  // Maximum number of motors supported
+#define RESOLUTION 90  // Note resolution in microseconds. tick() is called at this interval
+#define MAX_MOTORS 2  // Maximum number of motors supported
 #define MAX_ARGS 5     // Maximum number of serial command arguments. Don't change this.
 
 #define CMD_PLAY  'p'  // Serial command to play a note
@@ -50,21 +50,22 @@ void tick() {
         if ((motors[i].flags & MM_FLAG_ENABLED) && (motors[i].curCmd.flags & NC_FLAG_ENABLED)) {
             // This motor is connected and has a note to play
 
-            // If this motor is a floppy drive handle DIRECTION swapping
-            if (motors[i].flags & MM_FLAG_FLOPPY) {
-                motors[i].floppyCur++;
-                if (motors[i].floppyCur >= motors[i].floppyMax) {
-                    motors[i].flags ^= MM_FLAG_HIGH2;
-                    digitalWrite(motors[i].pin2, motors[i].flags & MM_FLAG_HIGH2);
-                    motors[i].floppyCur = 0;
-                }
-            }
-
             // Increment delayPos
             motors[i].curCmd.delayPos++;
             
             // Check for overflow and toggle pin state
             if (motors[i].curCmd.delayPos > motors[i].curCmd.delay) {
+                
+                // If this motor is a floppy drive handle DIRECTION swapping
+                if (motors[i].flags & MM_FLAG_FLOPPY) {
+                    motors[i].floppyCur++;
+                    if (motors[i].floppyCur >= motors[i].floppyMax) {
+                        motors[i].flags ^= MM_FLAG_HIGH2;
+                        digitalWrite(motors[i].pin2, motors[i].flags & MM_FLAG_HIGH2);
+                        motors[i].floppyCur = 0;
+                    }
+                }
+                
                 // Toggle motor's pin's state
                 motors[i].flags ^= MM_FLAG_HIGH1;
                 digitalWrite(motors[i].pin1, motors[i].flags & MM_FLAG_HIGH1);
@@ -79,6 +80,7 @@ void tick() {
 void setup() {
     Serial.begin(115200);
 
+#if 0 // Stepper Motor Installation
     // Enable motor 0 (Stepper)
     pinMode(6, OUTPUT);
     pinMode(5, OUTPUT);
@@ -96,6 +98,25 @@ void setup() {
     digitalWrite(10, LOW);
     motors[1].pin1 = 9;
     motors[1].flags = MM_FLAG_ENABLED;
+#endif
+#if 0 // Floppy Drive Installation
+    pinMode(2, OUTPUT);
+    pinMode(3, OUTPUT);
+    motors[0].pin1 = 2;
+    motors[0].pin2 = 3;
+    motors[0].flags = MM_FLAG_ENABLED | MM_FLAG_FLOPPY;
+    motors[0].floppyMax = FLOPPY_DEFAULT_MAX;
+    motors[0].floppyCur = 0;
+
+    
+    pinMode(4, OUTPUT);
+    pinMode(5, OUTPUT);
+    motors[1].pin1 = 4;
+    motors[1].pin2 = 5;
+    motors[1].flags = MM_FLAG_ENABLED | MM_FLAG_FLOPPY;
+    motors[1].floppyMax = FLOPPY_DEFAULT_MAX;
+    motors[1].floppyCur = 0;
+#endif
 
     // Install timer
     Timer1.initialize(RESOLUTION);
@@ -148,9 +169,7 @@ void loop() {
                 // Set note
                 motors[motor_idx].curCmd.delay = atoi(args[1]) / RESOLUTION;
                 motors[motor_idx].curCmd.delayPos = 0;
-                //motors[motor_idx].curCmd.repeat = atoi(args[2]);
-                //motors[motor_idx].curCmd.repeatPos = 0;
-                motors[motor_idx].curCmd.flags = NC_FLAG_ENABLED;
+                motors[motor_idx].curCmd.flags |= NC_FLAG_ENABLED;
                 Serial.println("OK");
                 goto done_processing;
 
