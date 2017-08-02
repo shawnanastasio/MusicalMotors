@@ -168,3 +168,46 @@ class StepperMotor(MusicalMotor):
 
     def _send_stop_cmd(self):
         self.si.stop(self.index)
+
+
+class FloppyDrive(MusicalMotor):
+    FLOPPY_MIDI_TO_DELAY = [
+        # Octave 0
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 1
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 2
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 3
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 4
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 5 - Contains middle C
+        [30578, 28861, 27242, 25713, 24270, 22909, 21622, 20409, 19263, 18182, 17161, 16198],
+        # Octave 6
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 7
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 8
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 9
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 10
+        [None, None, None, None, None, None, None, None, None, None, None, None],
+    ]
+
+    def __init__(self, serial_interface, index, transpose=False):
+        MusicalMotor.__init__(self, serial_interface, index, transpose=transpose)
+        self.midi_to_delay = FLOPPY_MIDI_TO_DELAY
+        
+        # Send a reset command to this motor
+        self._send_reset_cmd()
+    
+    def _send_reset_cmd(self):
+        self.si.reset(self.index)
+    
+    def _send_play_cmd(self, delay):
+        self.si.play(self.index, delay)
+
+    def _send_stop_cmd(self):
+        self.si.stop(self.index)
