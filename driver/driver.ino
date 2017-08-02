@@ -19,15 +19,15 @@
 #define MM_FLAG_FLOPPY  (1<<3) // Is this motor a floppy drive?
 
 struct NoteCommand {
-    uint16_t delay;     // Current delay in ticks (microseconds / RESOLUTION)
-    uint16_t delayPos;  // Current position in period
+    uint8_t delay;     // Current delay in ticks (microseconds / RESOLUTION)
+    uint8_t delayPos;  // Current position in period
     uint8_t flags;
 };
 
 struct MusicalMotor {
     int pin1;          // Primary pin for steppers, STEP for floppies
     int pin2;          // Unused for steppers, DIRECTION for floppies
-    uint16_t flags;
+    uint8_t flags;
     uint8_t floppyMax; // Maximum head position (only used on floppy)
     uint8_t floppyCur; // Current head position (only used on floppy)
     NoteCommand curCmd;
@@ -54,7 +54,7 @@ void tick() {
             }
 
             // Increment delayPos
-            motors[i].curCmd.delayPos += RESOLUTION;
+            motors[i].curCmd.delayPos++;
             
             // Check for overflow and toggle pin state
             if (motors[i].curCmd.delayPos > motors[i].curCmd.delay) {
@@ -130,7 +130,7 @@ void loop() {
                 }
 
                 // Set note
-                motors[motor_idx].curCmd.delay = atoi(args[1]);
+                motors[motor_idx].curCmd.delay = atoi(args[1]) / RESOLUTION;
                 motors[motor_idx].curCmd.delayPos = 0;
                 //motors[motor_idx].curCmd.repeat = atoi(args[2]);
                 //motors[motor_idx].curCmd.repeatPos = 0;
