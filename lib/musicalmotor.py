@@ -126,13 +126,14 @@ class MusicalMotor:
 
         if delay is None:
             raise ValueError("Requested note has no corresponding delay!")
-    
+
         self.current_note = midi_event.note
         self._send_play_cmd(delay)
 
 class StepperMotor(MusicalMotor):
-    O1 = {'G#': 1190, 'G': 1260, 'A#': 1060, 'A': 1123, 'B#': 943, 'B': 1000, 'C#': 890, 'C': 943, 'D#': 793, 'D': 840, 'E#': 705, 'E': 747, 'F#': 665, 'F':705}
-    O2 = {'G': 629}
+    O4 = {'C': 3790, 'C#': 3580,'D': 3380, 'D#': 3186, 'E': 3008 ,'F': 2840, 'F#': 2679,'G': 2529, 'G#': 2585, 'A': 2250, 'A#': 2126, 'B': 2006}
+    O5 = {'C': 1893, 'C#': 1787, 'D': 1686, 'D#': 1591 ,'E': 1501, 'E#': 1416, 'F': 1416,'F#': 1337, 'G#': 1190, 'G': 1260, 'A#': 1060, 'A': 1123, 'B#': 943, 'B': 1000}
+    O6 = {'C#': 890, 'C': 943, 'D#': 793, 'D': 840, 'E#': 705, 'E': 747, 'F#': 665, 'F':705, 'G': 629}
     STEPPER_MIDI_TO_DELAY = [
         # Octave 0
         [None, None, None, None, None, None, None, None, None, None, None, None],
@@ -143,11 +144,11 @@ class StepperMotor(MusicalMotor):
         # Octave 3
         [None, None, None, None, None, None, None, None, None, None, None, None],
         # Octave 4
-        [None, None, None, None, None, None, None, None, None, None, None, None],
+        [O4['C'], O4['C#'], O4['D'], O4['D#'], O4['E'], O4['F'], O4['F#'], O4['G'], O4['G#'], O4['A'], O4['A#'], O4['B']],
         # Octave 5 - Contains middle C
-        [O1['C'], O1['C#'], O1['D'], O1['D#'], O1['E'], O1['F'], O1['F#'], O1['G'], O1['G#'], O1['A'], O1['A#'], O1['B']],
+        [O5['C'], O5['C#'], O5['D'], O5['D#'], O5['E'], O5['F'], O5['F#'], O5['G'], O5['G#'], O5['A'], O5['A#'], O5['B']],
         # Octave 6
-        [None, None, None, None, None, None, None, O2['G'], None, None, None, None],
+        [O6['C'], O6['C#'], O6['D'], O6['D#'], O6['E'], O6['F'], O6['F#'], O6['G'], None, None, None, None],
         # Octave 7
         [None, None, None, None, None, None, None, None, None, None, None, None],
         # Octave 8

@@ -18,11 +18,11 @@ def quit_handler(signal, frame):
         pass
 
     sys.exit(0)
-    
+
 
 def main():
     signal.signal(signal.SIGINT, quit_handler)
-    
+
     # Get MIDI file from argument 1
     if len(sys.argv) != 2:
         print("Usage: {} <song.midi>".format(sys.argv[0]))
@@ -38,9 +38,9 @@ def main():
     si = SerialInterface(config.arduino_port, config.baud)
 
     # Initalize motors
-    motors.append(mm.StepperMotor(si, 0, transpose=True))
-    motors.append(mm.StepperMotor(si, 1, transpose=True))
-    
+    motors.append(mm.StepperMotor(si, 0, transpose=False))
+    motors.append(mm.StepperMotor(si, 1, transpose=False))
+
 
     # Play each event in the midi
     for msg in mid.play():
@@ -51,7 +51,7 @@ def main():
             if len(motors)-1 < msg.channel:
                 #print("No motor for channel {}!".format(msg.channel))
                 continue
-            
+
             # If the corresponding motor is free, use that
             if motors[msg.channel].can_play(msg):
                 motors[msg.channel].play(msg)
@@ -60,7 +60,7 @@ def main():
                 for i in range(0, len(motors), 1):
                     if i != msg.channel and motors[msg.channel].can_play(msg):
                         motors.play(msg)
-                        break 
+                        break
         except Exception as e:
             print("err:", e)
             #return 1
