@@ -2,66 +2,68 @@
 
 #include <TimerOne.h>
 
-#define RESOLUTION 18
-#define MAX_MOTORS 2
-#define MAX_ARGS 5
+/* PROGRAM CONSTANTS */
+#define RESOLUTION 20  // Note resolution in microseconds. tick() is called at this interval
+#define MAX_MOTORS 10  // Maximum number of motors supported
+#define MAX_ARGS 5     // Maximum number of serial command arguments. Don't change this.
 
+#define FLOPPY_DEFAULT_MAX 160 // Default max head position for a floppy drive. 160 for 3.5".
+
+/* NOTECOMMAND FLAGS */
 #define NC_FLAG_ENABLED (1<<0) // Is this NoteCommand enabled?
 
-#define SM_FLAG_ENABLED (1<<0) // Is a motor connected to this pin?
-#define SM_FLAG_HIGH    (1<<1) // Is this motor's digital pin set HIGH?
+/* MUSICALMOTOR FLAGS */
+#define MM_FLAG_ENABLED (1<<0) // Is a motor connected to this pin?
+#define MM_FLAG_HIGH1   (1<<1) // Is this motor's pin1 set HIGH?
+#define MM_FLAG_HIGH2   (1<<2) // Is this motor's pin2 set HIGH? (floppy only)
+#define MM_FLAG_FLOPPY  (1<<3) // Is this motor a floppy drive?
 
 struct NoteCommand {
+    uint16_t delay;     // Current delay in ticks (microseconds / RESOLUTION)
+    uint16_t delayPos;  // Current position in period
     uint8_t flags;
-    uint16_t delayy;    // Current delay in ticks (microseconds / RESOLUTION)
-    uint16_t delayPos; // Current position in period
-    uint64_t repeat;    // Number of times to repeat
-    uint64_t repeatPos; // Current repeats completed
 };
 
-struct StepperMotor {
-    int pin;
+struct MusicalMotor {
+    int pin1;          // Primary pin for steppers, STEP for floppies
+    int pin2;          // Unused for steppers, DIRECTION for floppies
     uint16_t flags;
-    NoteCommand cur_cmd;
+    uint8_t floppyMax; // Maximum head position (only used on floppy)
+    uint8_t floppyCur; // Current head position (only used on floppy)
+    NoteCommand curCmd;
 };
 
-static volatile StepperMotor motors[MAX_MOTORS];
+static volatile MusicalMotor motors[MAX_MOTORS];
 
-struct Note {
-    int o1;
-    int o1b;
-    int o1s;
-    int o0;
-    int o0b;
-    int o0s;
-};
-
-static Note noteDelay[128];
 
 void tick() {
     // Go through all enabled motors and handle current note
     int i = 0;
     for (i=0; i<MAX_MOTORS; i++) {
-        if ((motors[i].flags & SM_FLAG_ENABLED) && (motors[i].cur_cmd.flags & NC_FLAG_ENABLED)) {
+        if ((motors[i].flags & MM_FLAG_ENABLED) && (motors[i].curCmd.flags & NC_FLAG_ENABLED)) {
             // This motor is connected and has a note to play
 
+            // If this motor is a floppy drive handle DIRECTION swapping
+            if (motors[i].flags & MM_FLAG_FLOPPY) {
+                motors[i].floppyCur++;
+                if (motors[i].floppyCur >= motors[i].floppyMax) {
+                    motors[i].flags ^= MM_FLAG_HIGH1;
+                    digitalWrite(motors[i].pin2, motors[i].flags & MM_FLAG_HIGH2);
+                    motors[i].floppyCur = 0;
+                }
+            }
+
             // Increment delayPos
-            motors[i].cur_cmd.delayPos += RESOLUTION;
+            motors[i].curCmd.delayPos += RESOLUTION;
             
             // Check for overflow and toggle pin state
-            if (motors[i].cur_cmd.delayPos > motors[i].cur_cmd.delayy) {
+            if (motors[i].curCmd.delayPos > motors[i].curCmd.delay) {
                 // Toggle motor's pin's state
-                motors[i].flags ^= SM_FLAG_HIGH;
-                digitalWrite(motors[i].pin, motors[i].flags & SM_FLAG_HIGH);
+                motors[i].flags ^= MM_FLAG_HIGH1;
+                digitalWrite(motors[i].pin1, motors[i].flags & MM_FLAG_HIGH1);
 
                 // Overflow, reset delayPos and increment repeatPos
-                motors[i].cur_cmd.delayPos = 0;
-                motors[i].cur_cmd.repeatPos++;
-
-                // If we're done repeating, disable this notecommand
-                if (motors[i].cur_cmd.repeatPos > motors[i].cur_cmd.repeat) {
-                    //motors[i].cur_cmd.flags &= ~NC_FLAG_ENABLED;
-                }
+                motors[i].curCmd.delayPos = 0;
             }
         }
     } 
@@ -69,86 +71,24 @@ void tick() {
 
 void setup() {
     Serial.begin(115200);
-    
-    // Install notes
-    noteDelay['A'] = {
-    .o1 = 1123,
-    .o1b = 1190,
-    .o1s = 1060,
-    };
-    
-    noteDelay['B'] = {
-    .o1 = 1000,
-    .o1b = 1060,
-    .o1s = 943,
-    };
-    
-    noteDelay['C'] = {
-    .o1 = 943,
-    .o1b = 1000,
-    .o1s = 890,
-    };
-    
-    noteDelay['D'] = {
-    .o1 = 840,
-    .o1b = 890,
-    .o1s = 793,
-    };
-    
-    noteDelay['E'] = {
-    .o1 = 747,
-    .o1b = 793,
-    .o1s = 705,
-    };
-    
-    noteDelay['F'] = {
-    .o1 = 705,
-    .o1b = 747,
-    .o1s = 665,
-    };
-    
-    noteDelay['G'] = {
-    .o1 = 629,
-    .o1b = 0,
-    .o1s = 0,
-    .o0 = 1260,
-    };
 
-
-    // Enable motor 0
+    // Enable motor 0 (Stepper)
     pinMode(6, OUTPUT);
     pinMode(5, OUTPUT);
     pinMode(4, OUTPUT);
     digitalWrite(6, LOW);
     digitalWrite(4, LOW);
-    motors[0].pin = 5;
-    motors[0].flags = SM_FLAG_ENABLED;
-#if 0
-    // Add a command to play a note 5 times
-    motors[0].cur_cmd.flags = NC_FLAG_ENABLED;
-    motors[0].cur_cmd.delayy = noteDelay['C'].o1;
-    motors[0].cur_cmd.delayPos = 0;
-    motors[0].cur_cmd.repeat = 2000;
-    motors[0].cur_cmd.repeatPos = 0;
-#endif
+    motors[0].pin1 = 5;
+    motors[0].flags = MM_FLAG_ENABLED;
 
-    // Enable motor 1
+    // Enable motor 1 (Stepper)
     pinMode(8, OUTPUT);
     pinMode(9, OUTPUT);
     pinMode(10, OUTPUT);
     digitalWrite(8, LOW);
     digitalWrite(10, LOW);
-    motors[1].pin = 9;
-    motors[1].flags = SM_FLAG_ENABLED;
-    
-#if 0
-    // Add a command to play A
-    motors[1].cur_cmd.flags = NC_FLAG_ENABLED;
-    motors[1].cur_cmd.delayy = noteDelay['E'].o1;
-    motors[1].cur_cmd.delayPos = 0;
-    motors[1].cur_cmd.repeat = 2000;
-    motors[1].cur_cmd.repeatPos = 0;
-#endif
+    motors[1].pin1 = 9;
+    motors[1].flags = MM_FLAG_ENABLED;
 
     // Install timer
     Timer1.initialize(RESOLUTION);
@@ -184,17 +124,17 @@ void loop() {
 
                 // If the requested motor already has a command, ignore
                 motor_idx = atoi(args[0]);
-                if (motors[motor_idx].cur_cmd.flags & NC_FLAG_ENABLED) {
+                if (motors[motor_idx].curCmd.flags & NC_FLAG_ENABLED) {
                     Serial.println("ERR motor busy");
                     goto done_processing;
                 }
 
                 // Set note
-                motors[motor_idx].cur_cmd.delayy = atoi(args[1]);
-                motors[motor_idx].cur_cmd.delayPos = 0;
-                //motors[motor_idx].cur_cmd.repeat = atoi(args[2]);
-                //motors[motor_idx].cur_cmd.repeatPos = 0;
-                motors[motor_idx].cur_cmd.flags = NC_FLAG_ENABLED;
+                motors[motor_idx].curCmd.delay = atoi(args[1]);
+                motors[motor_idx].curCmd.delayPos = 0;
+                //motors[motor_idx].curCmd.repeat = atoi(args[2]);
+                //motors[motor_idx].curCmd.repeatPos = 0;
+                motors[motor_idx].curCmd.flags = NC_FLAG_ENABLED;
                 Serial.println("OK");
                 goto done_processing;
 
@@ -216,12 +156,12 @@ void loop() {
                 motor_idx = atoi(args[0]);
                 
                 // Stop currently playing note
-                if ((motors[motor_idx].cur_cmd.flags & NC_FLAG_ENABLED) == 0) {
+                if ((motors[motor_idx].curCmd.flags & NC_FLAG_ENABLED) == 0) {
                     Serial.println("ERR motor not busy");
                     goto done_processing;
                 }
 
-                motors[motor_idx].cur_cmd.flags &= ~NC_FLAG_ENABLED;
+                motors[motor_idx].curCmd.flags &= ~NC_FLAG_ENABLED;
                 Serial.println("OK");
                 goto done_processing;
                 
