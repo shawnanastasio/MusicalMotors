@@ -5,7 +5,7 @@
 
 /* PROGRAM CONSTANTS */
 #define RESOLUTION 90  // Note resolution in microseconds. tick() is called at this interval
-#define MAX_MOTORS 2  // Maximum number of motors supported
+#define MAX_MOTORS 10  // Maximum number of motors supported
 #define MAX_ARGS 5     // Maximum number of serial command arguments. Don't change this.
 
 #define CMD_PLAY  'p'  // Serial command to play a note
@@ -43,9 +43,13 @@ static volatile MusicalMotor motors[MAX_MOTORS];
 /**
  * Interrupt handler called every `RESOLUTION` microseconds to handle motor steps
  */
+#pragma GCC push_options
+#pragma GCC optimize ("O3")
+#pragma GCC optimize ("unroll-loops")
+
 void tick() {
     // Go through all enabled motors and handle current note
-    int i = 0;
+    int i;
     for (i=0; i<MAX_MOTORS; i++) {
         if ((motors[i].flags & MM_FLAG_ENABLED) && (motors[i].curCmd.flags & NC_FLAG_ENABLED)) {
             // This motor is connected and has a note to play
@@ -76,6 +80,8 @@ void tick() {
         }
     } 
 }
+
+#pragma GCC pop_options
 
 void setup() {
     Serial.begin(115200);
