@@ -29,15 +29,26 @@ class MusicalMotor:
         [None, None, None, None, None, None, None, None, None, None, None, None],
     ]
 
-    def __init__(self, serial_interface, index, transpose=False):
+    def __init__(self, serial_interface, index, transpose=False, octaves=None):
+        """
+        Construct a MusicalMotor
+
+        serial_interface - SerialInterface object to use for communication
+        index - Index of motor on Arduino
+        transpose - Should out of range notes be automatically transposed?
+        octaves - List of midi octaves to play on this motor
+        """
         self.si = serial_interface
         self.index = index
         self.transpose = transpose
         self.midi_to_delay = MusicalMotor.DEFAULT_MIDI_TO_DELAY
         self.current_note = 0
+        self.octaves = octaves
 
     def get_delay(self, midi):
         octave = midi // 12
+        if self.octaves is not None and octave not in self.octaves:
+            return None
         index  = midi % 12
         return self.midi_to_delay[octave][index]
 
@@ -47,6 +58,8 @@ class MusicalMotor:
         # List of other octaves that have this note
         other_octaves = []
         for i in range(0, 11, 1):
+            if self.octaves is not None and i not in self.octaves:
+                continue
             if self.midi_to_delay[i][note] is not None:
                 other_octaves.append(i)
 
@@ -159,9 +172,9 @@ class StepperMotor(MusicalMotor):
         [None, None, None, None, None, None, None, None, None, None, None, None],
     ]
 
-    def __init__(self, serial_interface, index, transpose=False):
-        MusicalMotor.__init__(self, serial_interface, index, transpose=transpose)
-        self.midi_to_delay = StepperMotor.STEPPER_MIDI_TO_DELAY
+    def __init__(self, serial_interface, index, transpose=False, octaves=None):
+        MusicalMotor.__init__(self, serial_interface, index, transpose=transpose, octaves=octaves)
+        self.midi_to_delay = self.STEPPER_MIDI_TO_DELAY
 
     def _send_play_cmd(self, delay):
         self.si.play(self.index, delay)
@@ -181,24 +194,24 @@ class FloppyDrive(MusicalMotor):
         # Octave 3
         [None, None, None, None, None, None, None, None, None, None, None, None],
         # Octave 4
-        [7644, 7215, 6810, 6428, 6067, 5727, 5405, 5102, 4815, 4545, 4290, 4049],
-        # Octave 5 - Contains middle C
-        [3822, 3609, 3405, 3214, 3033, 2863, 2702, 2551, 2408, 2272, 2145, 2024],
-        # Octave 6
-        [1911, 1804, 1702, 1607, 1517, 1431, 1351, 1275, 1204, 1136, 1072, 1012],
-        # Octave 7
-        [955, 902, 851, 803, 758, 716, 675, 638, 602, 568, 536, 506],
-        # Octave 8
         [None, None, None, None, None, None, None, None, None, None, None, None],
+        # Octave 5 - Contains middle C
+        [7644, 7215, 6810, 6428, 6067, 5727, 5405, 5102, 4815, 4545, 4290, 4049],
+        # Octave 6
+        [3822, 3609, 3405, 3214, 3033, 2863, 2702, 2551, 2408, 2272, 2145, 2024],
+        # Octave 7
+        [1911, 1804, 1702, 1607, 1517, 1431, 1351, 1275, 1204, 1136, 1072, 1012],
+        # Octave 8
+        [955, 902, 851, 803, 758, 716, 675, 638, 602, 568, 536, 506],
         # Octave 9
         [None, None, None, None, None, None, None, None, None, None, None, None],
         # Octave 10
-        [None, None, None, None, None, None, None, None, None, None, None, None],
+        [None, None, None, None, None, None, None, None, None, None, None, None],                
     ]
 
-    def __init__(self, serial_interface, index, transpose=False):
-        MusicalMotor.__init__(self, serial_interface, index, transpose=transpose)
-        self.midi_to_delay = FloppyDrive.FLOPPY_MIDI_TO_DELAY
+    def __init__(self, serial_interface, index, transpose=False, octaves=None):
+        MusicalMotor.__init__(self, serial_interface, index, transpose=transpose, octaves=octaves)
+        self.midi_to_delay = self.FLOPPY_MIDI_TO_DELAY
         
         # Send a reset command to this motor
         self._send_reset_cmd()
@@ -210,4 +223,4 @@ class FloppyDrive(MusicalMotor):
         self.si.play(self.index, delay)
 
     def _send_stop_cmd(self):
-        self.si.stop(self.index)
+        self.si.stop(self.index) 
