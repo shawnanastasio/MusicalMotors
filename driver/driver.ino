@@ -1,11 +1,11 @@
 #include <stdint.h>
 #include <string.h>
 
-#include <TimerOne.h>
+#include <CurieTimerOne.h>
 
 /* PROGRAM CONSTANTS */
 #define RESOLUTION 90  // Note resolution in microseconds. tick() is called at this interval
-#define MAX_MOTORS 10  // Maximum number of motors supported
+#define MAX_MOTORS 3   // Maximum number of motors supported
 #define MAX_ARGS 5     // Maximum number of serial command arguments. Don't change this.
 
 #define CMD_PLAY  'p'  // Serial command to play a note
@@ -85,6 +85,7 @@ void tick() {
 
 void setup() {
     Serial.begin(115200);
+    while (!Serial);
 
 #if 0 // Stepper Motor Installation
     // Enable motor 0 (Stepper)
@@ -125,8 +126,7 @@ void setup() {
 #endif
 
     // Install timer
-    Timer1.initialize(RESOLUTION);
-    Timer1.attachInterrupt(tick);
+    CurieTimerOne.start(RESOLUTION, tick);
 }
 
 volatile static bool processing_command = false;
