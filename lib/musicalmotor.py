@@ -181,13 +181,13 @@ class FloppyDrive(MusicalMotor):
         # Octave 3
         [None, None, None, None, None, None, None, None, None, None, None, None],
         # Octave 4
-        [None, None, None, None, None, None, None, None, None, None, None, None],
+        [7644, 7215, 6810, 6428, 6067, 5727, 5405, 5102, 4815, 4545, 4290, 4049],
         # Octave 5 - Contains middle C
-        [30578, 28861, 27242, 25713, 24270, 22909, 21622, 20409, 19263, 18182, 17161, 16198],
+        [3822, 3609, 3405, 3214, 3033, 2863, 2702, 2551, 2408, 2272, 2145, 2024],
         # Octave 6
-        [None, None, None, None, None, None, None, None, None, None, None, None],
+        [1911, 1804, 1702, 1607, 1517, 1431, 1351, 1275, 1204, 1136, 1072, 1012],
         # Octave 7
-        [None, None, None, None, None, None, None, None, None, None, None, None],
+        [955, 902, 851, 803, 758, 716, 675, 638, 602, 568, 536, 506],
         # Octave 8
         [None, None, None, None, None, None, None, None, None, None, None, None],
         # Octave 9
