@@ -4,13 +4,16 @@
 #include <TimerOne.h>
 
 /* PROGRAM CONSTANTS */
-#define RESOLUTION 90  // Note resolution in microseconds. tick() is called at this interval
-#define MAX_MOTORS 10  // Maximum number of motors supported
-#define MAX_ARGS 5     // Maximum number of serial command arguments. Don't change this.
+#define RESOLUTION 40  // Note resolution in microseconds. tick() is called at this interval
+#define MAX_MOTORS 4   // Maximum number of motors supported
 
-#define CMD_PLAY  'p'  // Serial command to play a note
-#define CMD_STOP  's'  // Serial command to stop playing a note
-#define CMD_RESET 'r'  // Serial command to reset a motor (floppy only)
+#define CMD_PLAY  0  // Serial command to play a note
+#define CMD_STOP  1  // Serial command to stop playing a note
+#define CMD_RESET 2  // Serial command to reset a motor (floppy only)
+
+#define ERR_SUCCESS   0 // Serial return code for success
+#define ERR_MOTORBUSY 1 // Serial return code for motor busy
+#define ERR_BADMOTOR  2 // Serial return code for invalid motor
 
 #define FLOPPY_DEFAULT_MAX 160 // Default max head position for a floppy drive. 160 for 3.5".
 
@@ -51,7 +54,7 @@ void tick() {
     // Go through all enabled motors and handle current note
     int i;
     for (i=0; i<MAX_MOTORS; i++) {
-        if ((motors[i].flags & MM_FLAG_ENABLED) && (motors[i].curCmd.flags & NC_FLAG_ENABLED)) {
+        if (motors[i].curCmd.flags & NC_FLAG_ENABLED) {
             // This motor is connected and has a note to play
 
             // Increment delayPos
@@ -85,6 +88,7 @@ void tick() {
 
 void setup() {
     Serial.begin(115200);
+    pinMode(13, OUTPUT);
 
 #if 0 // Stepper Motor Installation
     // Enable motor 0 (Stepper)
@@ -105,7 +109,7 @@ void setup() {
     motors[1].pin1 = 9;
     motors[1].flags = MM_FLAG_ENABLED;
 #endif
-#if 0 // Floppy Drive Installation
+#if 1 // Floppy Drive Installation
     pinMode(2, OUTPUT);
     pinMode(3, OUTPUT);
     motors[0].pin1 = 2;
@@ -122,6 +126,22 @@ void setup() {
     motors[1].flags = MM_FLAG_ENABLED | MM_FLAG_FLOPPY;
     motors[1].floppyMax = FLOPPY_DEFAULT_MAX;
     motors[1].floppyCur = 0;
+
+    pinMode(6, OUTPUT);
+    pinMode(7, OUTPUT);
+    motors[2].pin1 = 6;
+    motors[2].pin2 = 7;
+    motors[2].flags = MM_FLAG_ENABLED | MM_FLAG_FLOPPY;
+    motors[2].floppyMax = FLOPPY_DEFAULT_MAX;
+    motors[2].floppyCur = 0;
+
+    pinMode(8, OUTPUT);
+    pinMode(9, OUTPUT);
+    motors[3].pin1 = 8;
+    motors[3].pin2 = 9;
+    motors[3].flags = MM_FLAG_ENABLED | MM_FLAG_FLOPPY;
+    motors[3].floppyMax = FLOPPY_DEFAULT_MAX;
+    motors[3].floppyCur = 0;
 #endif
 
     // Install timer
@@ -129,102 +149,61 @@ void setup() {
     Timer1.attachInterrupt(tick);
 }
 
-volatile static bool processing_command = false;
-static char *args[MAX_ARGS];
-static int arg_len;
-static char input_buf[256];
-
-/**
- * Helper function to read arguments from serial and put in global args array
- */
-__attribute__((always_inline)) static inline void getSerialArguments() {
-    int i = Serial.readBytesUntil('\n', input_buf, 255);
-    input_buf[i] = '\0';
-
-    // Load arguments into `args` array
-    char *tok = strtok(input_buf, " ");
-    arg_len = 1;
-    for (i=0; i<MAX_ARGS; i++) {
-        args[i] = tok;
-        tok = strtok(NULL, " ");
-        if (tok) arg_len++;
-        else break;
-    }
+static inline uint8_t serialReadBlocking() {
+    while (Serial.available() == 0);
+    return Serial.read();
 }
 
-
 void loop() {
-    char *tok;
-    int arg_len;
-    int motor_idx;
-    int i;
-    if (Serial.available() && !processing_command) {
-        processing_command = false;
-        switch (Serial.read()) {
-            case CMD_PLAY:
-                // PLAY: usage: p <motor> <noteDelay>
-                getSerialArguments();
+    uint8_t motorIdx;
+    uint16_t noteDelay;
+    uint8_t i;
 
-                // If the requested motor already has a command, ignore
-                motor_idx = atoi(args[0]);
-                if (motors[motor_idx].curCmd.flags & NC_FLAG_ENABLED) {
-                    Serial.println("ERR motor busy");
-                    goto done_processing;
-                }
+    if (Serial.available()) {
+        switch (serialReadBlocking()) {
+            case CMD_PLAY: // CMD_PLAY usage: <motor idx> <noteDelay[15:8]> <noteDelay[7:0]>
+                digitalWrite(13, HIGH);
 
-                // Set note
-                motors[motor_idx].curCmd.delay = atoi(args[1]) / RESOLUTION;
-                motors[motor_idx].curCmd.delayPos = 0;
-                motors[motor_idx].curCmd.flags |= NC_FLAG_ENABLED;
-                Serial.println("OK");
-                goto done_processing;
+                // Get requested motor index
+                motorIdx = serialReadBlocking();
 
-             case CMD_STOP:
-                // STOP: usage: s <motor>
-                getSerialArguments();
-
-                motor_idx = atoi(args[0]);
-                
-                // Stop currently playing note
-                if ((motors[motor_idx].curCmd.flags & NC_FLAG_ENABLED) == 0) {
-                    Serial.println("ERR motor not busy");
-                    goto done_processing;
-                }
-
-                motors[motor_idx].curCmd.flags &= ~NC_FLAG_ENABLED;
-                Serial.println("OK");
-                goto done_processing;
+                // Get noteDelay and set note command
+                noteDelay = serialReadBlocking() << 8 | serialReadBlocking();
+                motors[motorIdx].curCmd.delay = noteDelay / RESOLUTION;
+                motors[motorIdx].curCmd.delayPos = 0;
+                motors[motorIdx].curCmd.flags |= NC_FLAG_ENABLED;
+                break;
             
-            case CMD_RESET:
-                // RESET: usage: r <motor>
-                // Floppy only!
-                getSerialArguments();
+            case CMD_STOP: // CMD_STOP usage: <motor idx>
 
-                // Make sure the requested motor is a floppy and enabled
-                motor_idx = atoi(args[0]);
-                if ((motors[motor_idx].flags & MM_FLAG_FLOPPY) == 0) {
-                    Serial.println("ERR motor not floppy");
-                    goto done_processing;
+                // Get requested motor index
+                motorIdx = serialReadBlocking();
+
+                motors[motorIdx].curCmd.flags &= ~NC_FLAG_ENABLED;
+                break;
+            
+            case CMD_RESET: // CMD_RESET usage: <motor idx>
+
+                // Get requested motor index
+                motorIdx = serialReadBlocking();
+                if (!(motors[motorIdx].flags & MM_FLAG_ENABLED)) {
+                    Serial.write(ERR_BADMOTOR);
+                    break;
                 }
 
                 // Set the DIRECTION pin to HIGH (reverse) and run the head back to 0
-                digitalWrite(motors[motor_idx].pin2, HIGH);
-                for (i=0; i<motors[motor_idx].floppyMax; i+=2) {
-                    digitalWrite(motors[motor_idx].pin1, HIGH);
-                    digitalWrite(motors[motor_idx].pin1, LOW);
+                digitalWrite(motors[motorIdx].pin2, HIGH);
+                for (i=0; i<motors[motorIdx].floppyMax; i+=2) {
+                    digitalWrite(motors[motorIdx].pin1, HIGH);
+                    digitalWrite(motors[motorIdx].pin1, LOW);
                     delay(5);   
                 }
-                digitalWrite(motors[motor_idx].pin2, LOW);
-                motors[motor_idx].floppyCur = 0;
-                motors[motor_idx].flags &= ~MM_FLAG_HIGH2;
+                digitalWrite(motors[motorIdx].pin2, LOW);
+                motors[motorIdx].floppyCur = 0;
+                motors[motorIdx].flags &= ~MM_FLAG_HIGH2;
 
-                Serial.println("OK");
-                goto done_processing;
-                
-            done_processing:
-                processing_command = false;
+                Serial.write(ERR_SUCCESS);
                 break;
         }
     }
 }
-

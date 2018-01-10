@@ -2,7 +2,9 @@
 
 import signal
 import sys
+import time
 import mido
+import gc
 import lib.musicalmotor as mm
 from lib.serial_interface import SerialInterface
 from lib.config import Config
@@ -19,6 +21,15 @@ def quit_handler(signal, frame):
 
     sys.exit(0)
 
+
+def precisesleep(seconds):
+    """
+    A precise version of time.sleep().
+    TODO: Don't always use this as it causes 100% CPU utilization
+    """
+    dest_time = time.perf_counter() + seconds
+    while time.perf_counter() < dest_time:
+        pass
 
 def main():
     signal.signal(signal.SIGINT, quit_handler)
@@ -38,33 +49,33 @@ def main():
     si = SerialInterface(config.arduino_port, config.baud)
 
     # Initalize motors
-    motors.append(mm.StepperMotor(si, 0, transpose=False))
-    motors.append(mm.StepperMotor(si, 1, transpose=False))
+    motors.append(mm.FloppyDrive(si, 0, transpose=True, octaves=[5,6]))
+    motors.append(mm.FloppyDrive(si, 1, transpose=True, octaves=[5,6]))
+    motors.append(mm.FloppyDrive(si, 2, transpose=True, octaves=[5,6]))
+    motors.append(mm.FloppyDrive(si, 3, transpose=True, octaves=[5,6]))
 
 
-    # Play each event in the midi
-    for msg in mid.play():
-        if msg.type == "note_off" and (msg.channel == 0 or msg.channel == 1):
-            print(msg)
+    motors_len = len(motors)
+    start = time.time()
+    for msg in mid:
+        precisesleep(msg.time)
+
+        if msg.is_meta:
+            continue
+
+        if motors_len - 1 < msg.channel:
+            continue
+        
         try:
-            # See if we have a motor for this channel
-            if len(motors)-1 < msg.channel:
-                #print("No motor for channel {}!".format(msg.channel))
-                continue
-
-            # If the corresponding motor is free, use that
-            if motors[msg.channel].can_play(msg):
-                motors[msg.channel].play(msg)
-            else:
-                # The motor isn't able to play this, try all the others
-                for i in range(0, len(motors), 1):
-                    if i != msg.channel and motors[msg.channel].can_play(msg):
-                        motors.play(msg)
-                        break
+            motors[msg.channel].play(msg)
         except Exception as e:
-            print("err:", e)
-            #return 1
+            print("Error: " + str(e))
+            pass
+        
 
+    end = time.time()
+    print("Played song in {} seconds".format(end - start))
+  
     # Stop all motors
     for motor in motors:
         try:
