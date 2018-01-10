@@ -6,7 +6,6 @@
 /* PROGRAM CONSTANTS */
 #define RESOLUTION 40  // Note resolution in microseconds. tick() is called at this interval
 #define MAX_MOTORS 4   // Maximum number of motors supported
-#define MAX_ARGS 5     // Maximum number of serial command arguments. Don't change this.
 
 #define CMD_PLAY  0  // Serial command to play a note
 #define CMD_STOP  1  // Serial command to stop playing a note
@@ -65,14 +64,14 @@ void tick() {
             if (motors[i].curCmd.delayPos > motors[i].curCmd.delay) {
                 
                 // If this motor is a floppy drive handle DIRECTION swapping
-                //if (motors[i].flags & MM_FLAG_FLOPPY) {
+                if (motors[i].flags & MM_FLAG_FLOPPY) {
                     motors[i].floppyCur++;
                     if (motors[i].floppyCur >= motors[i].floppyMax) {
                         motors[i].flags ^= MM_FLAG_HIGH2;
                         digitalWrite(motors[i].pin2, motors[i].flags & MM_FLAG_HIGH2);
                         motors[i].floppyCur = 0;
                     }
-                //}
+                }
                 
                 // Toggle motor's pin's state
                 motors[i].flags ^= MM_FLAG_HIGH1;
@@ -159,44 +158,28 @@ void loop() {
     uint8_t motorIdx;
     uint16_t noteDelay;
     uint8_t i;
-    Serial1.println("ree");
 
     if (Serial.available()) {
         switch (serialReadBlocking()) {
             case CMD_PLAY: // CMD_PLAY usage: <motor idx> <noteDelay[15:8]> <noteDelay[7:0]>
+                digitalWrite(13, HIGH);
+
                 // Get requested motor index
                 motorIdx = serialReadBlocking();
-                if (motors[motorIdx].curCmd.flags & NC_FLAG_ENABLED) {
-                    //serialReadBlocking();
-                    //serialReadBlocking();
-                    //Serial.write(ERR_MOTORBUSY);
-                    //break;
-                } else if (!(motors[motorIdx].flags & MM_FLAG_ENABLED)) {
-                    serialReadBlocking();
-                    serialReadBlocking();
-                    //Serial.write(ERR_BADMOTOR);
-                    break;
-                }
 
                 // Get noteDelay and set note command
                 noteDelay = serialReadBlocking() << 8 | serialReadBlocking();
                 motors[motorIdx].curCmd.delay = noteDelay / RESOLUTION;
                 motors[motorIdx].curCmd.delayPos = 0;
                 motors[motorIdx].curCmd.flags |= NC_FLAG_ENABLED;
-                //Serial.write(ERR_SUCCESS);
                 break;
             
             case CMD_STOP: // CMD_STOP usage: <motor idx>
 
                 // Get requested motor index
                 motorIdx = serialReadBlocking();
-                if (!(motors[motorIdx].flags & MM_FLAG_ENABLED)) {
-                    //Serial.write(ERR_BADMOTOR);
-                    break;
-                }
 
                 motors[motorIdx].curCmd.flags &= ~NC_FLAG_ENABLED;
-                //Serial.write(ERR_SUCCESS);
                 break;
             
             case CMD_RESET: // CMD_RESET usage: <motor idx>
@@ -219,11 +202,8 @@ void loop() {
                 motors[motorIdx].floppyCur = 0;
                 motors[motorIdx].flags &= ~MM_FLAG_HIGH2;
 
-                //Serial.write(ERR_SUCCESS);
+                Serial.write(ERR_SUCCESS);
                 break;
-            
-            default:
-                Serial.write(4);
         }
     }
 }

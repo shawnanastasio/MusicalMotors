@@ -26,8 +26,6 @@ class SerialInterface(object):
         "Success",
         "Motor busy",
         "Bad motor",
-        "Debug1",
-        "Debug2"
     ]
 
     def __init__(self, port, baud, timeout=1):
@@ -46,12 +44,6 @@ class SerialInterface(object):
         """
         # Send a play command to the requested motor
         self.s.write(bytes([SerialInterface.CMD_PLAY, motor, note_delay >> 8, note_delay & 0xFF]))
-        return
-        # Recieve the response
-        resp = self.s.read()[0]
-
-        if resp != SerialInterface.ERR_SUCCESS:
-            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
 
     def stop(self, motor):
         """
@@ -60,12 +52,6 @@ class SerialInterface(object):
         motor - motor index to stop
         """
         self.s.write(bytes([SerialInterface.CMD_STOP, motor]))
-        return
-        # Recieve the response
-        resp = self.s.read()[0]
-
-        if resp != SerialInterface.ERR_SUCCESS:
-            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
     
     def reset(self, motor):
         """
@@ -73,8 +59,7 @@ class SerialInterface(object):
 
         motor - motor index of floppy drive to stop
         """
-        e = self.s.write(bytes([SerialInterface.CMD_RESET, motor]))
-        return
+        self.s.write(bytes([SerialInterface.CMD_RESET, motor]))
 
         # Recieve the response
         resp = self.s.read()[0]

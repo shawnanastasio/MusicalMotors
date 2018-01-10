@@ -107,11 +107,11 @@ class MusicalMotor:
         Play the specified MIDI note for the specified duration on this motor.
         Raises ValueError if the requested note does not have a corresponding delay.
 
-        midi - MIDI note index number
+        midi - mido MIDI event object
         """
 
         if midi_event.type != "note_on" and midi_event.type != "note_off":
-            print("UNSUPPORTED MIDI EVENT!")
+            raise RuntimeError("Unsupported Note Event!")
             return
 
         # Handle note_off
