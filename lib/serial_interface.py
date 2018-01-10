@@ -16,9 +16,20 @@ class SerialInterface(object):
     - CMD_STOP: Stop a playing note
     - CMD_RESET: Reset the specified floppy drive
     """
-    CMD_PLAY = "p"
-    CMD_STOP = "s"
-    CMD_RESET = "r"
+    CMD_PLAY = 0
+    CMD_STOP = 1
+    CMD_RESET = 2
+
+    ERR_SUCCESS = 0
+
+    ERRORS = [
+        "Success",
+        "Motor busy",
+        "Bad motor",
+        "Debug1",
+        "Debug2"
+    ]
+
     def __init__(self, port, baud, timeout=1):
         # Establish a serial connection
         self.s = serial.Serial(port, baud, timeout=timeout)
@@ -32,18 +43,15 @@ class SerialInterface(object):
 
         motor - motor index to play note on
         note_delay - step delay of note to play
-        duration - duration in ms to play note for
         """
         # Send a play command to the requested motor
-        self.s.write(bytes("%s %d %d \n" % (self.CMD_PLAY, motor, note_delay), "UTF-8"))
+        self.s.write(bytes([SerialInterface.CMD_PLAY, motor, note_delay >> 8, note_delay & 0xFF]))
+        return
+        # Recieve the response
+        resp = self.s.read()[0]
 
-        # Recieve the full response
-        resp = self.s.readline()
-        #while not "ERR" in resp and not "OK" in resp:
-        #    resp += self.s.readline()
-
-        if bytes("ERR", "UTF-8") in resp:
-            raise RuntimeError("Arduino responded with an error! %s" % (resp.decode("UTF-8")))
+        if resp != SerialInterface.ERR_SUCCESS:
+            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
 
     def stop(self, motor):
         """
@@ -51,12 +59,13 @@ class SerialInterface(object):
 
         motor - motor index to stop
         """
-        self.s.write(bytes("%s %d \n" % (self.CMD_STOP, motor), "UTF-8"))
+        self.s.write(bytes([SerialInterface.CMD_STOP, motor]))
+        return
+        # Recieve the response
+        resp = self.s.read()[0]
 
-        resp = self.s.readline()
-
-        if bytes("ERR", "UTF-8") in resp:
-            raise RuntimeError("Arduino responded with an error! %s" % (resp.decode("UTF-8")))
+        if resp != SerialInterface.ERR_SUCCESS:
+            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
     
     def reset(self, motor):
         """
@@ -64,9 +73,11 @@ class SerialInterface(object):
 
         motor - motor index of floppy drive to stop
         """
-        self.s.write(bytes("%s %d \n" % (self.CMD_RESET, motor), "UTF-8"))
+        e = self.s.write(bytes([SerialInterface.CMD_RESET, motor]))
+        return
 
-        resp = self.s.readline()
+        # Recieve the response
+        resp = self.s.read()[0]
 
-        if bytes("ERR", "UTF-8") in resp:
-            raise RuntimeError("Arduino responded with an error! %s" % (resp.decode("UTF-8")))
+        if resp != SerialInterface.ERR_SUCCESS:
+            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
