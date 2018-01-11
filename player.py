@@ -8,6 +8,7 @@ import gc
 import lib.musicalmotor as mm
 from lib.serial_interface import SerialInterface
 from lib.config import Config
+from lib.sleeputils import precisesleep
 
 motors = []
 
@@ -20,16 +21,6 @@ def quit_handler(signal, frame):
         pass
 
     sys.exit(0)
-
-
-def precisesleep(seconds):
-    """
-    A precise version of time.sleep().
-    TODO: Don't always use this as it causes 100% CPU utilization
-    """
-    dest_time = time.perf_counter() + seconds
-    while time.perf_counter() < dest_time:
-        pass
 
 def main():
     signal.signal(signal.SIGINT, quit_handler)
@@ -65,17 +56,17 @@ def main():
 
         if motors_len - 1 < msg.channel:
             continue
-        
+
         try:
             motors[msg.channel].play(msg)
         except Exception as e:
             print("Error: " + str(e))
             pass
-        
+
 
     end = time.time()
     print("Played song in {} seconds".format(end - start))
-  
+
     # Stop all motors
     for motor in motors:
         try:

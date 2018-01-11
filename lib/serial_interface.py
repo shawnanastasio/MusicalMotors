@@ -52,7 +52,7 @@ class SerialInterface(object):
         motor - motor index to stop
         """
         self.s.write(bytes([SerialInterface.CMD_STOP, motor]))
-    
+
     def reset(self, motor):
         """
         Reset the specified floppy drive
