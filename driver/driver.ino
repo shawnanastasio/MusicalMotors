@@ -88,7 +88,6 @@ void tick() {
 
 void setup() {
     Serial.begin(115200);
-    pinMode(13, OUTPUT);
 
 #if 0 // Stepper Motor Installation
     // Enable motor 0 (Stepper)
@@ -162,7 +161,6 @@ void loop() {
     if (Serial.available()) {
         switch (serialReadBlocking()) {
             case CMD_PLAY: // CMD_PLAY usage: <motor idx> <noteDelay[15:8]> <noteDelay[7:0]>
-                digitalWrite(13, HIGH);
 
                 // Get requested motor index
                 motorIdx = serialReadBlocking();
