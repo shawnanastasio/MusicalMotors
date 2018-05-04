@@ -1,3 +1,4 @@
+from .serial_interface import SerialInterface as ser
 
 class MusicalMotor:
 
@@ -29,21 +30,20 @@ class MusicalMotor:
         [None, None, None, None, None, None, None, None, None, None, None, None],
     ]
 
-    def __init__(self, serial_interface, index, transpose=False, octaves=None):
+    def __init__(self, serial_interface, transpose=False, octaves=None):
         """
         Construct a MusicalMotor
 
         serial_interface - SerialInterface object to use for communication
-        index - Index of motor on Arduino
         transpose - Should out of range notes be automatically transposed?
         octaves - List of midi octaves to play on this motor
         """
         self.si = serial_interface
-        self.index = index
         self.transpose = transpose
         self.midi_to_delay = MusicalMotor.DEFAULT_MIDI_TO_DELAY
         self.current_note = 0
         self.octaves = octaves
+        self.index = 0
 
     def get_delay(self, midi):
         octave = midi // 12
@@ -74,6 +74,12 @@ class MusicalMotor:
 
         # Return the note from the found octave
         return self.midi_to_delay[closest][note]
+    
+    def _send_init_cmd(self):
+        """
+        Sends an ADD command to inform the controller of the motor and recieve an idx
+        """
+        raise NotImplementedError()
 
     def _send_play_cmd(self, delay):
         """
@@ -172,9 +178,14 @@ class StepperMotor(MusicalMotor):
         [None, None, None, None, None, None, None, None, None, None, None, None],
     ]
 
-    def __init__(self, serial_interface, index, transpose=False, octaves=None):
-        MusicalMotor.__init__(self, serial_interface, index, transpose=transpose, octaves=octaves)
+    def __init__(self, serial_interface, step_pin, transpose=False, octaves=None):
+        MusicalMotor.__init__(self, serial_interface, transpose=transpose, octaves=octaves)
         self.midi_to_delay = self.STEPPER_MIDI_TO_DELAY
+        self.step_pin = step_pin
+        self.index = self._send_init_cmd()
+
+    def _send_init_cmd(self):
+        return self.si.add(self.step_pin, 0, ser.MM_FLAG_ENABLED)
 
     def _send_play_cmd(self, delay):
         self.si.play(self.index, delay)
@@ -209,12 +220,18 @@ class FloppyDrive(MusicalMotor):
         [None, None, None, None, None, None, None, None, None, None, None, None],                
     ]
 
-    def __init__(self, serial_interface, index, transpose=False, octaves=None):
-        MusicalMotor.__init__(self, serial_interface, index, transpose=transpose, octaves=octaves)
+    def __init__(self, serial_interface, step_pin, dir_pin, transpose=False, octaves=None):
+        MusicalMotor.__init__(self, serial_interface, transpose=transpose, octaves=octaves)
         self.midi_to_delay = self.FLOPPY_MIDI_TO_DELAY
+        self.step_pin = step_pin
+        self.dir_pin = dir_pin
+        self.index = self._send_init_cmd()
         
         # Send a reset command to this motor
         self._send_reset_cmd()
+
+    def _send_init_cmd(self):
+        return self.si.add(self.step_pin, self.dir_pin, ser.MM_FLAG_ENABLED | ser.MM_FLAG_FLOPPY)
     
     def _send_reset_cmd(self):
         self.si.reset(self.index)
@@ -224,3 +241,19 @@ class FloppyDrive(MusicalMotor):
 
     def _send_stop_cmd(self):
         self.si.stop(self.index) 
+
+class DummyMotor(MusicalMotor):
+    def __init__(self):
+        pass
+
+    def _send_init_cmd(self):
+        return 0
+    
+    def _send_reset_cmd(self):
+        pass
+    
+    def _send_play_cmd(self, delay):
+        pass
+
+    def _send_stop_cmd(self):
+        pass

@@ -5,7 +5,8 @@ import sys
 import time
 import mido
 import gc
-import lib.musicalmotor as mm
+import lib.musical_motor as mm
+import lib.scheduler as sched
 from lib.serial_interface import SerialInterface
 from lib.config import Config
 from lib.sleeputils import precisesleep
@@ -38,27 +39,32 @@ def main():
 
     # Initalize serial interface
     si = SerialInterface(config.arduino_port, config.baud)
+    si.wipe()
 
-    # Initalize motors
-    motors.append(mm.FloppyDrive(si, 0, transpose=True, octaves=[5,6]))
-    motors.append(mm.FloppyDrive(si, 1, transpose=True, octaves=[5,6]))
-    motors.append(mm.FloppyDrive(si, 2, transpose=True, octaves=[5,6]))
-    motors.append(mm.FloppyDrive(si, 3, transpose=True, octaves=[5,6]))
+    # Initalize motors and scheduler 
+    motors.append(mm.FloppyDrive(si, 26, 27, transpose=True, octaves=[5,6]))
+    motors.append(mm.FloppyDrive(si, 2, 3, transpose=True, octaves=[5,6]))
+    motors.append(mm.FloppyDrive(si, 22, 23, transpose=True, octaves=[5,6]))
+    motors.append(mm.FloppyDrive(si, 8, 9, transpose=True, octaves=[5,6]))
+    motors.append(mm.FloppyDrive(si, 6, 7, transpose=True, octaves=[5,6]))
+    motors.append(mm.FloppyDrive(si, 24, 25, transpose=True, octaves=[5,6]))
 
+
+    scheduler = sched.NopScheduler(motors)
 
     motors_len = len(motors)
     start = time.time()
     for msg in mid:
         precisesleep(msg.time)
 
-        if msg.is_meta:
-            continue
-
-        if motors_len - 1 < msg.channel:
-            continue
-
         try:
-            motors[msg.channel].play(msg)
+            if msg.is_meta:
+                continue
+
+            if motors_len - 1 < msg.channel:
+                continue
+
+            scheduler.play(msg)
         except Exception as e:
             print("Error: " + str(e))
             pass

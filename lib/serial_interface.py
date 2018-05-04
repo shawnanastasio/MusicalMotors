@@ -19,8 +19,16 @@ class SerialInterface(object):
     CMD_PLAY = 0
     CMD_STOP = 1
     CMD_RESET = 2
+    CMD_WIPE = 3
+    CMD_ADD = 4
 
     ERR_SUCCESS = 0
+    ERR_MOTORBUSY = 1
+    ERR_BADMOTOR = 2
+
+    MM_FLAG_ENABLED = 0x1
+    MM_FLAG_FLOPPY = 0x8
+    MM_FLAG_NORESET = 0x10
 
     ERRORS = [
         "Success",
@@ -66,3 +74,35 @@ class SerialInterface(object):
 
         if resp != SerialInterface.ERR_SUCCESS:
             raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
+
+    def wipe(self):
+        """
+        Wipe all installed floppy drives
+        """
+        self.s.write(bytes([SerialInterface.CMD_WIPE]))
+
+        resp = self.s.read()[0]
+
+        if resp != SerialInterface.ERR_SUCCESS:
+            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
+
+    def add(self, step_pin, dir_pin, flags):
+        """
+        Add a motor
+
+        step_pin - Arduino pin connected to STEP
+        dir_pin - Arduino pin connected to DIRECTION
+        flags - MM_FLAG_* bitfield
+
+        Returns motor index on success
+        """
+        self.s.write(bytes([SerialInterface.CMD_ADD, step_pin & 0xFF, dir_pin & 0xFF, flags & 0xFF]))
+        
+        resp = self.s.read()[0]
+
+        if resp != SerialInterface.ERR_SUCCESS:
+            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
+
+        # If we got here, the Arduino is going to send back a motor idx
+        return self.s.read()[0]
+
