@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+
+<xs:schema elementFormDefault="qualified"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"	
+    targetNamespace="https://anastas.io/MusicalMotors"
+    xmlns="https://anastas.io/MusicalMotors">
+
+    <!-- Top level configuration element -->
+    <xs:element name="songconfig">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="midi" type="xs:string"/>
+                <xs:element name="scheduler" type="SchedulerType"/>
+                <xs:element name="remap" type="RemapListType" minOccurs="0"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:simpleType name="SchedulerType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="nop"/>
+            <xs:enumeration value="RoundRobin"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="RemapListType">
+        <xs:sequence>
+            <xs:element name="channel" type="RemapType" maxOccurs="16"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="RemapType">
+        <xs:simpleContent>
+            <xs:extension base="xs:positiveInteger">
+                <xs:attribute name="motorIndex" type="xs:positiveInteger" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+</xs:schema>
+

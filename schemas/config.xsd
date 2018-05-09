@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+
+<xs:schema elementFormDefault="qualified"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"	
+    targetNamespace="https://anastas.io/MusicalMotors"
+    xmlns="https://anastas.io/MusicalMotors">
+
+    <!-- Top level configuration element -->
+    <xs:element name="config">
+        <xs:complexType>
+            <xs:sequence>
+                <!-- Serial port of driver -->
+                <xs:element name="serialPort" type="SerialPortType"/>
+
+                <!-- List of installed motors -->
+                <xs:element name="motors" type="MotorListType"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:complexType name="SerialPortType">
+        <xs:simpleContent>
+            <xs:extension base="xs:string">
+                <xs:attribute name="baud" type="xs:positiveInteger" use="required"/>
+            </xs:extension>
+        </xs:simpleContent>
+    </xs:complexType>
+
+    <xs:complexType name="FloppyType">
+        <xs:attribute name="stepPin" type="xs:positiveInteger" use="required"/>
+        <xs:attribute name="dirPin" type="xs:positiveInteger" use="required"/>
+        <xs:attribute name="transpose" type="xs:boolean" default="false"/>
+        <xs:attribute name="octaves" type="xs:string" default=""/>
+    </xs:complexType>
+   
+    <xs:complexType name="StepperType">
+        <xs:attribute name="stepPin" type="xs:positiveInteger" use="required"/>
+        <xs:attribute name="transpose" type="xs:boolean" default="false"/>
+        <xs:attribute name="octaves" type="xs:string" default=""/>
+    </xs:complexType>
+
+    <xs:complexType name="MotorListType">
+        <xs:choice maxOccurs="unbounded">
+            <xs:element name="floppy" type="FloppyType"/>
+            <xs:element name="stepper" type="StepperType"/>
+        </xs:choice>
+    </xs:complexType> 
+</xs:schema>
+

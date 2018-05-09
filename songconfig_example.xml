@@ -1,0 +1,14 @@
+<?xml version = "1.0"?>
+
+<songconfig xmlns="https://anastas.io/MusicalMotors"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="songconfig.xsd">
+
+	<midi>/path/to/midi.mid</midi>
+	<scheduler>nop</scheduler>
+
+    <!-- remap midi channel 1 to motor 9 -->
+	<remap>
+		<channel motorIndex="1">9</channel>
+    </remap>
+</songconfig>

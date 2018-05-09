@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+
+<config xmlns="https://anastas.io/MusicalMotors"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="config.xsd">
+
+    <serialPort baud="115200">COM0</serialPort>
+    
+    <motors>
+        <floppy stepPin="2" dirPin="3" transpose="true" octaves="5,6"/>
+        <floppy stepPin="4" dirPin="5"/>
+        <stepper stepPin="6"/>
+    </motors>
+</config>
