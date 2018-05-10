@@ -22,6 +22,7 @@
         <xs:simpleContent>
             <xs:extension base="xs:string">
                 <xs:attribute name="baud" type="xs:positiveInteger" use="required"/>
+                <xs:attribute name="timeout" type="xs:positiveInteger" default="1"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>
@@ -45,5 +46,6 @@
             <xs:element name="stepper" type="StepperType"/>
         </xs:choice>
     </xs:complexType> 
+    
 </xs:schema>
 

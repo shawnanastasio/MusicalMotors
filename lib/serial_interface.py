@@ -7,6 +7,8 @@ import random
 import sys
 import configparser
 
+class SerialException(Exception):
+    pass
 
 class SerialInterface(object):
     """
@@ -43,6 +45,8 @@ class SerialInterface(object):
         # Wait for arduino to boot up
         time.sleep(2)
 
+        self.wipe()
+
     def play(self, motor, note_delay):
         """
         Play a note on the specified motor
@@ -73,7 +77,7 @@ class SerialInterface(object):
         resp = self.s.read()[0]
 
         if resp != SerialInterface.ERR_SUCCESS:
-            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
+            raise SerialException("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
 
     def wipe(self):
         """
@@ -84,7 +88,7 @@ class SerialInterface(object):
         resp = self.s.read()[0]
 
         if resp != SerialInterface.ERR_SUCCESS:
-            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
+            raise SerialException("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
 
     def add(self, step_pin, dir_pin, flags):
         """
@@ -101,7 +105,7 @@ class SerialInterface(object):
         resp = self.s.read()[0]
 
         if resp != SerialInterface.ERR_SUCCESS:
-            raise RuntimeError("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
+            raise SerialException("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
 
         # If we got here, the Arduino is going to send back a motor idx
         return self.s.read()[0]

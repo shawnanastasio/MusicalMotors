@@ -37,22 +37,10 @@ def main():
     # Read the midi
     mid = mido.MidiFile(sys.argv[1])
 
-    # Initalize serial interface
-    si = SerialInterface(config.arduino_port, config.baud)
-    si.wipe()
+    # Instantiate scheduler
+    scheduler = sched.NopScheduler(config.motors)
 
-    # Initalize motors and scheduler 
-    motors.append(mm.FloppyDrive(si, 26, 27, transpose=True, octaves=[5,6]))
-    motors.append(mm.FloppyDrive(si, 2, 3, transpose=True, octaves=[5,6]))
-    motors.append(mm.FloppyDrive(si, 22, 23, transpose=True, octaves=[5,6]))
-    motors.append(mm.FloppyDrive(si, 8, 9, transpose=True, octaves=[5,6]))
-    motors.append(mm.FloppyDrive(si, 6, 7, transpose=True, octaves=[5,6]))
-    motors.append(mm.FloppyDrive(si, 24, 25, transpose=True, octaves=[5,6]))
-
-
-    scheduler = sched.NopScheduler(motors)
-
-    motors_len = len(motors)
+    motors_len = len(config.motors)
     start = time.time()
     for msg in mid:
         precisesleep(msg.time)

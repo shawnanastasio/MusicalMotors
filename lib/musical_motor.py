@@ -42,7 +42,7 @@ class MusicalMotor:
         self.transpose = transpose
         self.midi_to_delay = MusicalMotor.DEFAULT_MIDI_TO_DELAY
         self.current_note = 0
-        self.octaves = octaves
+        self.octaves = octaves if octaves and len(octaves) else None
         self.index = 0
 
     def get_delay(self, midi):
