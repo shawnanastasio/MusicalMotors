@@ -4,7 +4,7 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="songconfig.xsd">
 
-	<midi>/path/to/midi.mid</midi>
+	<midi>test.mid</midi>
 	<scheduler>nop</scheduler>
 
     <!-- remap motors 0 and 1 to play midi channel 9 (midi channels are 0 - 15) -->

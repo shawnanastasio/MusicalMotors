@@ -1,19 +1,29 @@
 
 class Scheduler(object):
-    def __init__(self, motors):
-        self.motors = motors
+    def __init__(self, motor_map):
+        """
+        motor_map: list [idx=midi channel, val=list of motor objects]
+        """
+        self.motor_map = motor_map
     
     def play(self, event):
         raise RuntimeError("Unimplemented.")
 
 class NopScheduler(Scheduler):
     def play(self, event):
-        self.motors[event.channel].play(event)
+        #self.motors[event.channel].play(event)
+        if len(self.motor_map[event.channel]) > 0:
+            # Motor map has associate motor(s) for this channel,
+            # Play the event on all of them
+            for m in self.motor_map[event.channel]:
+                m.play(event)
     
 class RoundRobinScheduler(Scheduler):
-    def __init__(self, motors):
-        Scheduler.__init__(self, motors)
-        self.currently_playing = [None for x in range(17)]
+    def __init__(self, motor_map):
+        Scheduler.__init__(self, motor_map)
+        # Generate a raw list of motors and ignore the motor map
+        self.motors = sum(self.motor_map, [])
+        self.currently_playing = [None for x in range(16)]
 
 
     def play(self, event):

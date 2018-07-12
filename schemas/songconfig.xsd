@@ -10,7 +10,7 @@
         <xs:complexType>
             <xs:sequence>
                 <xs:element name="midi" type="xs:string"/>
-                <xs:element name="scheduler" type="SchedulerType"/>
+                <xs:element name="scheduler" type="SchedulerType" default="nop"/>
                 <xs:element name="remap" type="RemapListType" minOccurs="0"/>
             </xs:sequence>
         </xs:complexType>
@@ -25,14 +25,14 @@
 
     <xs:complexType name="RemapListType">
         <xs:sequence>
-            <xs:element name="channel" type="RemapType" maxOccurs="16"/>
+            <xs:element name="motorMapping" type="RemapType" maxOccurs="unbounded"/>
         </xs:sequence>
     </xs:complexType>
 
     <xs:complexType name="RemapType">
         <xs:simpleContent>
-            <xs:extension base="xs:positiveInteger">
-                <xs:attribute name="motorIndex" type="xs:positiveInteger" use="required"/>
+            <xs:extension base="xs:nonNegativeInteger">
+                <xs:attribute name="index" type="xs:nonNegativeInteger" use="required"/>
             </xs:extension>
         </xs:simpleContent>
     </xs:complexType>

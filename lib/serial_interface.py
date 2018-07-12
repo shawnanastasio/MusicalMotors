@@ -74,7 +74,10 @@ class SerialInterface(object):
         self.s.write(bytes([SerialInterface.CMD_RESET, motor]))
 
         # Recieve the response
-        resp = self.s.read()[0]
+        try:
+            resp = self.s.read()[0]
+        except Exception:
+            raise SerialException("Arduino didn't respond to command! Check serial port configuration and make sure it is programmed.")
 
         if resp != SerialInterface.ERR_SUCCESS:
             raise SerialException("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
@@ -85,8 +88,11 @@ class SerialInterface(object):
         """
         self.s.write(bytes([SerialInterface.CMD_WIPE]))
 
-        resp = self.s.read()[0]
-
+        try:
+            resp = self.s.read()[0]
+        except Exception:
+            raise SerialException("Arduino didn't respond to command! Check serial port configuration and make sure it is programmed.")
+  
         if resp != SerialInterface.ERR_SUCCESS:
             raise SerialException("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
 
@@ -102,8 +108,11 @@ class SerialInterface(object):
         """
         self.s.write(bytes([SerialInterface.CMD_ADD, step_pin & 0xFF, dir_pin & 0xFF, flags & 0xFF]))
         
-        resp = self.s.read()[0]
-
+        try:
+            resp = self.s.read()[0]
+        except Exception:
+            raise SerialException("Arduino didn't respond to command! Check serial port configuration and make sure it is programmed.")
+ 
         if resp != SerialInterface.ERR_SUCCESS:
             raise SerialException("Arduino responded with an error! %s" % (SerialInterface.ERRORS[resp]))
 
