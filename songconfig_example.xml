@@ -4,11 +4,11 @@
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="songconfig.xsd">
 
-	<midi>/path/to/midi.mid</midi>
-	<scheduler>nop</scheduler>
+    <midi>/path/to/midi.mid</midi>
+    <scheduler>nop</scheduler>
 
     <!-- remap motors 0 and 1 to play midi channel 9 (midi channels are 0 - 15) -->
-	<remap>
+    <remap>
         <motorMapping index="0">9</motorMapping>
         <motorMapping index="1">9</motorMapping>
     </remap>
